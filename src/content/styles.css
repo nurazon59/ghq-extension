@@ -1,0 +1,13 @@
+.ghq-hidden {
+  display: none !important;
+}
+
+.ghq-hidden-textarea {
+  position: fixed;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.ghq-flex-grow {
+  flex-grow: 1;
+}

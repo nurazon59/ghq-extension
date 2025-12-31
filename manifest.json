@@ -1,0 +1,19 @@
+{
+  "manifest_version": 3,
+  "name": "ghq get for GitHub",
+  "version": "1.0.0",
+  "description": "GitHub の Code ボタンに ghq get タブを追加",
+  "permissions": ["clipboardWrite"],
+  "host_permissions": ["https://github.com/*"],
+  "content_scripts": [
+    {
+      "matches": ["https://github.com/*"],
+      "js": ["dist/content.js"],
+      "css": ["dist/content.css"],
+      "run_at": "document_idle"
+    }
+  ],
+  "icons": {
+    "128": "icons/icon.svg"
+  }
+}
