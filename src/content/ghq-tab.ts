@@ -3,13 +3,11 @@ import { copyToClipboard, getGhqCommand, isRepositoryPage } from "./clipboard";
 
 const GHQ_TAB_ATTR = "data-ghq-tab";
 const GHQ_CONTENT_ATTR = "data-ghq-content";
-const GHQ_HIDDEN_ATTR = "data-ghq-hidden";
 
 const SELECTORS = {
   tabList: ".prc-components-UnderlineItemList-xKlKC",
-  existingTab: ".prc-UnderlineNav-UnderlineNavItem-syRjR",
   codePopover: ".react-overview-code-button-action-list",
-  urlInputArea: ".react-overview-code-button-action-list > div:first-child",
+  contentWrapper: ".react-overview-code-button-action-list > div.m-3",
 };
 
 const COPY_ICON_SVG = `
@@ -50,10 +48,11 @@ function createGhqCommandInput(command: string): HTMLInputElement {
   const commandInput = document.createElement("input");
   commandInput.type = "text";
   commandInput.className =
-    "form-control input-monospace input-sm color-bg-subtle ghq-flex-grow";
+    "form-control input-monospace input-sm color-bg-subtle";
   commandInput.readOnly = true;
   commandInput.value = command;
   commandInput.setAttribute("data-autoselect", "true");
+  commandInput.setAttribute("style", "flex-grow: 1;");
   return commandInput;
 }
 
@@ -86,15 +85,15 @@ function showCopiedFeedback(button: HTMLButtonElement): void {
   }, 2000);
 }
 
-function createGhqContentContainer(): HTMLDivElement {
+function createGhqContentPanel(): HTMLDivElement {
   const container = document.createElement("div");
   container.setAttribute(GHQ_CONTENT_ATTR, "true");
-  container.className = "mt-2 ghq-hidden";
+  container.className = "ghq-content-panel ghq-hidden";
 
   const command = getGhqCommand();
 
   const inputWrapper = document.createElement("div");
-  inputWrapper.className = "d-flex";
+  inputWrapper.className = "d-flex mt-2";
 
   const commandInput = createGhqCommandInput(command);
   const copyButton = createCopyButton(command);
@@ -112,29 +111,50 @@ function createGhqContentContainer(): HTMLDivElement {
   return container;
 }
 
-function deactivateAllTabs(tabList: Element): void {
+function findOriginalContentElements(contentWrapper: Element): Element[] {
+  const elements: Element[] = [];
+  const navElement = contentWrapper.querySelector('nav[aria-label="Remote URL selector"]');
+  
+  if (navElement) {
+    let sibling = navElement.nextElementSibling;
+    while (sibling) {
+      if (!sibling.hasAttribute(GHQ_CONTENT_ATTR)) {
+        elements.push(sibling);
+      }
+      sibling = sibling.nextElementSibling;
+    }
+  }
+  
+  return elements;
+}
+
+function activateGhqTab(
+  tabList: Element,
+  ghqLink: HTMLAnchorElement,
+  ghqContent: HTMLDivElement,
+  originalContent: Element[]
+): void {
   tabList.querySelectorAll("a").forEach((tab) => {
     tab.removeAttribute("aria-current");
   });
-}
-
-function hideExistingContent(urlInputArea: Element): void {
-  Array.from(urlInputArea.children).forEach((child) => {
-    const element = child as HTMLElement;
-    if (!element.hasAttribute(GHQ_CONTENT_ATTR)) {
-      element.setAttribute(GHQ_HIDDEN_ATTR, "true");
-      element.classList.add("ghq-hidden");
-    }
+  ghqLink.setAttribute("aria-current", "page");
+  
+  originalContent.forEach((el) => {
+    (el as HTMLElement).classList.add("ghq-hidden");
   });
+  ghqContent.classList.remove("ghq-hidden");
 }
 
-function showExistingContent(urlInputArea: Element): void {
-  Array.from(urlInputArea.children).forEach((child) => {
-    const element = child as HTMLElement;
-    if (element.hasAttribute(GHQ_HIDDEN_ATTR)) {
-      element.removeAttribute(GHQ_HIDDEN_ATTR);
-      element.classList.remove("ghq-hidden");
-    }
+function deactivateGhqTab(
+  ghqLink: HTMLAnchorElement,
+  ghqContent: HTMLDivElement,
+  originalContent: Element[]
+): void {
+  ghqLink.removeAttribute("aria-current");
+  
+  ghqContent.classList.add("ghq-hidden");
+  originalContent.forEach((el) => {
+    (el as HTMLElement).classList.remove("ghq-hidden");
   });
 }
 
@@ -142,23 +162,20 @@ function setupTabSwitching(
   tabList: Element,
   ghqTab: HTMLLIElement,
   ghqContent: HTMLDivElement,
-  urlInputArea: Element
+  contentWrapper: Element
 ): void {
-  const ghqLink = ghqTab.querySelector("a");
+  const ghqLink = ghqTab.querySelector("a") as HTMLAnchorElement;
+  const originalContent = findOriginalContentElements(contentWrapper);
 
-  ghqLink?.addEventListener("click", (e) => {
+  ghqLink.addEventListener("click", (e) => {
     e.preventDefault();
-    deactivateAllTabs(tabList);
-    ghqLink.setAttribute("aria-current", "page");
-    hideExistingContent(urlInputArea);
-    ghqContent.classList.remove("ghq-hidden");
+    e.stopPropagation();
+    activateGhqTab(tabList, ghqLink, ghqContent, originalContent);
   });
 
   tabList.querySelectorAll("a:not([data-ghq-tab])").forEach((tab) => {
     tab.addEventListener("click", () => {
-      ghqLink?.removeAttribute("aria-current");
-      ghqContent.classList.add("ghq-hidden");
-      showExistingContent(urlInputArea);
+      deactivateGhqTab(ghqLink, ghqContent, originalContent);
     });
   });
 }
@@ -172,16 +189,21 @@ function injectGhqTab(popover: Element): void {
   const tabList = popover.querySelector(SELECTORS.tabList);
   if (!tabList) return;
 
+  const contentWrapper = popover.querySelector(SELECTORS.contentWrapper);
+  if (!contentWrapper) return;
+
   const ghqTab = createGhqTabElement();
   tabList.appendChild(ghqTab);
 
-  const urlInputArea = popover.querySelector(SELECTORS.urlInputArea);
-  if (!urlInputArea) return;
+  const ghqContent = createGhqContentPanel();
+  const navElement = contentWrapper.querySelector('nav[aria-label="Remote URL selector"]');
+  if (navElement) {
+    navElement.insertAdjacentElement("afterend", ghqContent);
+  } else {
+    contentWrapper.appendChild(ghqContent);
+  }
 
-  const ghqContent = createGhqContentContainer();
-  urlInputArea.appendChild(ghqContent);
-
-  setupTabSwitching(tabList, ghqTab, ghqContent, urlInputArea);
+  setupTabSwitching(tabList, ghqTab, ghqContent, contentWrapper);
 }
 
 export function initGhqTab(): void {
