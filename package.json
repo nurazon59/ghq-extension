@@ -10,8 +10,6 @@
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
-    "@anthropic-ai/claude-code": "^0.2.70",
-    "@anthropic-ai/sdk": "^0.32.1",
     "@types/chrome": "^0.0.287",
     "eslint": "^9.17.0",
     "typescript": "^5.7.2",

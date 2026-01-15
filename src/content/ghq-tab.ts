@@ -5,9 +5,8 @@ const GHQ_TAB_ATTR = "data-ghq-tab";
 const GHQ_CONTENT_ATTR = "data-ghq-content";
 
 const SELECTORS = {
-  tabList: ".prc-components-UnderlineItemList-xKlKC",
+  nav: 'nav[aria-label="Remote URL selector"]',
   codePopover: ".react-overview-code-button-action-list",
-  contentWrapper: ".react-overview-code-button-action-list div.m-3",
 };
 
 const COPY_ICON_SVG = `
@@ -23,18 +22,27 @@ const CHECK_ICON_SVG = `
   </svg>
 `;
 
-function createGhqTabElement(): HTMLLIElement {
+function createGhqTabElement(existingTabItem: Element): HTMLLIElement {
   const tabItem = document.createElement("li");
-  tabItem.className = "prc-UnderlineNav-UnderlineNavItem-syRjR";
+  tabItem.className = existingTabItem.className;
 
+  const existingLink = existingTabItem.querySelector("a");
   const tabLink = document.createElement("a");
   tabLink.href = "#";
   tabLink.setAttribute("aria-label", "Clone with ghq");
-  tabLink.className = "prc-components-UnderlineItem-7fP-n";
+  tabLink.className = existingLink?.className || "";
   tabLink.setAttribute(GHQ_TAB_ATTR, "true");
 
+  const existingSpan = existingTabItem.querySelector("span");
   const tabText = document.createElement("span");
-  tabText.setAttribute("data-component", "text");
+  if (existingSpan) {
+    tabText.className = existingSpan.className;
+    Array.from(existingSpan.attributes).forEach((attr) => {
+      if (attr.name !== "class") {
+        tabText.setAttribute(attr.name, attr.value);
+      }
+    });
+  }
   tabText.setAttribute("data-content", "ghq");
   tabText.textContent = "ghq";
 
@@ -113,8 +121,8 @@ function createGhqContentPanel(): HTMLDivElement {
 
 function findOriginalContentElements(contentWrapper: Element): Element[] {
   const elements: Element[] = [];
-  const navElement = contentWrapper.querySelector('nav[aria-label="Remote URL selector"]');
-  
+  const navElement = contentWrapper.querySelector(SELECTORS.nav);
+
   if (navElement) {
     let sibling = navElement.nextElementSibling;
     while (sibling) {
@@ -124,7 +132,7 @@ function findOriginalContentElements(contentWrapper: Element): Element[] {
       sibling = sibling.nextElementSibling;
     }
   }
-  
+
   return elements;
 }
 
@@ -186,22 +194,23 @@ function injectGhqTab(popover: Element): void {
 
   if (!isRepositoryPage()) return;
 
-  const tabList = popover.querySelector(SELECTORS.tabList);
+  const nav = popover.querySelector(SELECTORS.nav);
+  if (!nav) return;
+
+  const tabList = nav.querySelector("ul");
   if (!tabList) return;
 
-  const contentWrapper = popover.querySelector(SELECTORS.contentWrapper);
+  const existingTabItem = tabList.querySelector("li");
+  if (!existingTabItem) return;
+
+  const contentWrapper = nav.parentElement;
   if (!contentWrapper) return;
 
-  const ghqTab = createGhqTabElement();
+  const ghqTab = createGhqTabElement(existingTabItem);
   tabList.appendChild(ghqTab);
 
   const ghqContent = createGhqContentPanel();
-  const navElement = contentWrapper.querySelector('nav[aria-label="Remote URL selector"]');
-  if (navElement) {
-    navElement.insertAdjacentElement("afterend", ghqContent);
-  } else {
-    contentWrapper.appendChild(ghqContent);
-  }
+  nav.insertAdjacentElement("afterend", ghqContent);
 
   setupTabSwitching(tabList, ghqTab, ghqContent, contentWrapper);
 }
