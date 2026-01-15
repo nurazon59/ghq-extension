@@ -7,7 +7,7 @@ const GHQ_CONTENT_ATTR = "data-ghq-content";
 const SELECTORS = {
   tabList: ".prc-components-UnderlineItemList-xKlKC",
   codePopover: ".react-overview-code-button-action-list",
-  contentWrapper: ".react-overview-code-button-action-list > div.m-3",
+  contentWrapper: ".react-overview-code-button-action-list div.m-3",
 };
 
 const COPY_ICON_SVG = `
