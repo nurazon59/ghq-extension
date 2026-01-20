@@ -9,8 +9,8 @@ importers:
   .:
     devDependencies:
       '@types/chrome':
-        specifier: ^0.0.287
-        version: 0.0.287
+        specifier: ^0.1.0
+        version: 0.1.35
       eslint:
         specifier: ^9.17.0
         version: 9.39.2
@@ -343,8 +343,8 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@types/chrome@0.0.287':
-    resolution: {integrity: sha512-wWhBNPNXZHwycHKNYnexUcpSbrihVZu++0rdp6GEk5ZgAglenLx+RwdEouh6FrHS0XQiOxSd62yaujM1OoQlZQ==}
+  '@types/chrome@0.1.35':
+    resolution: {integrity: sha512-Luzu3E4wbOawkBIiQOY/CIsx1W8cC2NF8VCHnoy+1Nszj1v0dfeo0XnGwHp+c+MUV0yhi6+s4Lo9UbATT1M32A==}
 
   '@types/estree@1.0.8':
     resolution: {integrity: sha512-dWHzHa2WqEXI/O1E9OjrocMTKJl2mSrEolh1Iomrv6U+JuNwaHXsXx9bLu5gG7BUWFIN0skIQJQ/L1rIex4X6w==}
@@ -936,7 +936,7 @@ snapshots:
   '@rollup/rollup-win32-x64-msvc@4.54.0':
     optional: true
 
-  '@types/chrome@0.0.287':
+  '@types/chrome@0.1.35':
     dependencies:
       '@types/filesystem': 0.0.36
       '@types/har-format': 1.2.16
